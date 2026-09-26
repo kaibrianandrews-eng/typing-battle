@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>タイピング・バトル</title>
+  <meta name="description" content="タイピングで戦うオンライン対戦ゲーム。NPC・ランダム・プレイヤーID対戦、フレンド機能つき。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="logo" data-go="home">⚔️ タイピング・バトル</button>
+    <div id="userBox" class="user-box"></div>
+  </header>
+
+  <main>
+    <!-- ホーム -->
+    <section id="scr-home" class="screen active">
+      <div class="hero">
+        <h1>TYPING <span>BATTLE</span></h1>
+        <p>打って、溜めて、必殺技を叩き込め！</p>
+      </div>
+      <button id="myChar" class="mychar" data-go="chars"></button>
+      <div class="menu">
+        <button class="big" data-go="npc"><b>🤖 NPCモード</b><small>CPU と対戦</small></button>
+        <button class="big online" data-go="random"><b>🎲 ランダムモード</b><small>誰かとオンライン対戦</small></button>
+        <button class="big online" data-go="pid"><b>🆔 プレイヤーIDモード</b><small>ID を入力して対戦</small></button>
+        <button class="big online" data-go="friends"><b>👥 フレンド</b><small>追加・対戦申し込み</small></button>
+        <button class="big" data-go="chars"><b>🎭 キャラクター</b><small>8 人から選ぶ</small></button>
+        <button class="big" data-go="settings"><b>⚙️ 設定</b><small>タイピング言語など</small></button>
+      </div>
+      <p id="onlineNote" class="note"></p>
+    </section>
+
+    <!-- キャラクター選択 -->
+    <section id="scr-chars" class="screen">
+      <h2>キャラクター選択</h2>
+      <div id="charGrid" class="char-grid"></div>
+      <button class="back" data-go="home">← 戻る</button>
+    </section>
+
+    <!-- 設定 -->
+    <section id="scr-settings" class="screen">
+      <h2>設定</h2>
+      <div class="panel form">
+        <label>プレイヤー名（オンライン対戦で表示）
+          <input id="setName" maxlength="16" autocomplete="off" placeholder="Player1234">
+        </label>
+        <label>タイピング言語
+          <select id="setLang"></select>
+        </label>
+        <label>制限時間
+          <select id="setTime">
+            <option value="60">60 秒</option><option value="90">90 秒</option>
+            <option value="120">120 秒</option><option value="180">180 秒</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="setAccent"> アクセント記号を省略して打ってもOK（é → e など）</label>
+        <label class="check"><input type="checkbox" id="setSound"> 効果音</label>
+        <label>カスタム単語（言語で「カスタム」を選ぶと使われます。1 行に 1 つ）
+          <textarea id="setCustom" rows="7" placeholder="hello world&#10;必殺技|ひっさつわざ&#10;たいぴんぐ"></textarea>
+        </label>
+        <p class="note">日本語は「表示|よみ」の形で書けます。ひらがな・カタカナだけの行はそのままローマ字で打てます。</p>
+      </div>
+      <button class="back" data-go="home">← 戻る</button>
+    </section>
+
+    <!-- NPC -->
+    <section id="scr-npc" class="screen">
+      <h2>🤖 NPCモード</h2>
+      <div class="panel">
+        <label>相手のキャラクター
+          <select id="npcChar"></select>
+        </label>
+        <p>難易度を選んでスタート</p>
+        <div id="npcLevels" class="level-grid"></div>
+      </div>
+      <button class="back" data-go="home">← 戻る</button>
+    </section>
+
+    <!-- ランダム -->
+    <section id="scr-random" class="screen">
+      <h2>🎲 ランダムモード</h2>
+      <div class="panel center">
+        <div id="randSpin" class="spinner hidden"></div>
+        <p id="randStatus">オンラインの誰かとランダムに対戦します。</p>
+        <button id="randStart" class="primary">マッチング開始</button>
+        <button id="randCancel" class="hidden">キャンセル</button>
+      </div>
+      <button class="back" data-go="home">← 戻る</button>
+    </section>
+
+    <!-- プレイヤーID -->
+    <section id="scr-pid" class="screen">
+      <h2>🆔 プレイヤーIDモード</h2>
+      <div class="panel">
+        <p>あなたのプレイヤーID</p>
+        <div class="pid-box"><code id="myPid">--------</code><button id="copyPid" class="small">コピー</button></div>
+        <p class="note">このIDを友達に教えると、対戦を申し込んでもらえます。IDはこのブラウザに保存されます（閲覧データを消すと新しいIDになります）。</p>
+        <hr>
+        <label>対戦したい相手のプレイヤーID
+          <div class="row"><input id="pidInput" maxlength="8" placeholder="例: K7Q2MX9A" autocomplete="off"><button id="pidGo" class="primary">対戦を申し込む</button></div>
+        </label>
+        <div class="row"><div id="pidSpin" class="spinner small hidden"></div><p id="pidStatus"></p></div>
+        <button id="pidCancel" class="hidden">申し込みを取り消す</button>
+      </div>
+      <button class="back" data-go="home">← 戻る</button>
+    </section>
+
+    <!-- フレンド -->
+    <section id="scr-friends" class="screen">
+      <h2>👥 フレンド</h2>
+      <div class="panel">
+        <label>プレイヤーIDで追加
+          <div class="row"><input id="frInput" maxlength="16" autocomplete="off" placeholder="例: K7Q2MX9A"><button id="frAdd" class="primary">申請する</button></div>
+        </label>
+        <p id="frMsg" class="note"></p>
+      </div>
+      <div class="panel"><h3>届いた申請</h3><ul id="frIncoming" class="list"></ul></div>
+      <div class="panel"><h3>フレンド</h3><ul id="frList" class="list"></ul></div>
+      <div class="panel"><h3>送った申請</h3><ul id="frOutgoing" class="list"></ul></div>
+      <button class="back" data-go="home">← 戻る</button>
+    </section>
+
+    <!-- バトル -->
+    <section id="scr-battle" class="screen">
+      <div class="arena">
+        <div id="fMe" class="fighter me"></div>
+        <div class="vs">
+          <div id="bTimer" class="timer">90</div>
+          <div class="vs-label">VS</div>
+          <div id="bCombo" class="combo"></div>
+        </div>
+        <div id="fOpp" class="fighter opp"></div>
+      </div>
+      <div id="wordBox" class="wordbox">
+        <div id="wDisp" class="w-disp"></div>
+        <div id="wKana" class="w-kana"></div>
+        <div class="w-roma"><span id="wTyped"></span><span id="wRemain"></span></div>
+      </div>
+      <p id="bHint" class="hint"></p>
+      <button id="bQuit" class="small ghost">降参する</button>
+    </section>
+  </main>
+
+  <div id="countdown" class="countdown hidden"></div>
+  <div id="specialCut" class="special-cut hidden"></div>
+  <div id="modal" class="modal hidden"><div id="modalBox" class="modal-box"></div></div>
+  <div id="toasts" class="toasts"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

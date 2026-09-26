@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    // プロフィール（誰でも閲覧可、編集は本人のみ。プレイヤーIDは変更不可）
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && me() == uid
+        && request.resource.data.username is string && request.resource.data.username.size() <= 16;
+      allow update: if signedIn() && me() == uid
+        && request.resource.data.playerId == resource.data.playerId
+        && request.resource.data.username is string && request.resource.data.username.size() <= 16;
+    }
+
+    // プレイヤーID の予約（一意性の保証）
+    match /playerIds/{pid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == me();
+    }
+
+    // ランダムマッチの待ち行列
+    match /queue/{uid} {
+      allow read: if signedIn();
+      allow create, delete: if signedIn() && me() == uid;
+      allow update: if signedIn() && (
+        me() == uid ||
+        (resource.data.matched == false && request.resource.data.matched == true
+          && request.resource.data.uid == resource.data.uid && request.resource.data.by == me())
+      );
+    }
+
+    // WebRTC シグナリング用の部屋
+    match /rooms/{roomId} {
+      function isMember(d) { return d.caller == me() || d.callee == me(); }
+      // 参加側は部屋が作られる前から監視するので、存在しない部屋の get は許可
+      allow get: if signedIn() && (resource == null || isMember(resource.data));
+      allow list: if signedIn() && isMember(resource.data);
+      allow create: if signedIn() && request.resource.data.caller == me();
+      allow update: if signedIn() && isMember(resource.data)
+        && request.resource.data.caller == resource.data.caller
+        && request.resource.data.callee == resource.data.callee;
+      allow delete: if signedIn() && isMember(resource.data);
+
+      match /{side}/{candId} {
+        allow read, write: if signedIn()
+          && isMember(get(/databases/$(database)/documents/rooms/$(roomId)).data);
+      }
+    }
+
+    // フレンド申請（ID は「送信者uid_受信者uid」）
+    match /friendRequests/{id} {
+      allow read: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+      allow create: if signedIn() && request.resource.data.from == me()
+        && id == request.resource.data.from + '_' + request.resource.data.to
+        && request.resource.data.status == 'pending';
+      allow update: if signedIn() && resource.data.to == me()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status == 'accepted';
+      allow delete: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+    }
+  }
+}
